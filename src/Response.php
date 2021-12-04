@@ -19,51 +19,25 @@ class Response
         return $this->header(Header::CONTENT_TYPE, $value);
     }
 
-    public function json(): Response
-    {
-        $this->contentType(ContentType::JSON);
-
-        return $this;
-    }
-
-    /**
-     * @return \Generator|string[]
-     */
-    private function packHeaders(): \Generator
-    {
-        foreach ($this->headers as $name => $value) {
-            yield sprintf('%s: %s', $name, $value);
-        }
-    }
-
-    private function packContent($data): string
-    {
-        if (is_array($data)) {
-            $this->json();
-
-            return json_encode($data);
-        }
-
-        return $data;
-    }
-
     private function sendHeaders(): void
     {
-        foreach ($this->packHeaders() as $header) {
-            header($header);
+        foreach ($this->headers as $name => $value) {
+            header(sprintf('%s: %s', $name, $value));
         }
     }
 
-    public function send($data = null): void
+    public function send(string $data = ''): void
     {
-        if ($data === null) {
-            $this->sendHeaders();
-            return;
-        }
-
-        $data = $this->packContent($data);
-
         $this->sendHeaders();
+
         echo $data;
+    }
+
+    public function sendJSON(array $data = []): void
+    {
+        $this->contentType(ContentType::JSON);
+        $this->sendHeaders();
+
+        echo json_encode($data);
     }
 }
