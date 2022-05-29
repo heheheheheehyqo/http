@@ -27,8 +27,7 @@
             "Hyqo\\Http\\": "src"
         },
         "files": [
-            "src/functions.php",
-            "src/Router/functions.php"
+            "src/functions.php"
         ]
     },
     "autoload-dev": {
