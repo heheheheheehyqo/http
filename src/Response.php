@@ -10,8 +10,6 @@ class Response
     /** @var string */
     protected $content;
 
-    protected $flags = [];
-
     public function __construct(?HttpCode $code = null, string $content = null)
     {
         $this->headers = (new ResponseHeaders)->setCode($code ?? HttpCode::OK());
@@ -65,19 +63,5 @@ class Response
         }
 
         echo $this->content;
-    }
-
-    /** @internal */
-    public function setFlag(string $name, string $value): self
-    {
-        $this->flags[$name] = $value;
-
-        return $this;
-    }
-
-    /** @internal */
-    public function getFlag(string $name): ?string
-    {
-        return $this->flags[$name] ?? null;
     }
 }
