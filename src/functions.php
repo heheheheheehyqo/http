@@ -74,30 +74,3 @@ function fetch_request_uri(ServerPool $server): string
 
     return $requestUri;
 }
-
-function redirect(string $location, ?HttpCode $code = null): Response
-{
-    return (new Response($code ?? HttpCode::FOUND()))
-        ->setHeader(Header::LOCATION, $location);
-}
-
-function json_response(array $content, ?HttpCode $code = null): Response
-{
-    return (new Response($code ?? HttpCode::OK()))
-        ->setContentType(ContentType::JSON)
-        ->setContent(json_encode($content));
-}
-
-function html_response(string $content, ?HttpCode $code = null): Response
-{
-    return (new Response($code ?? HttpCode::OK()))
-        ->setContentType(ContentType::HTML)
-        ->setContent($content);
-}
-
-function text_response(string $content, ?HttpCode $code = null): Response
-{
-    return (new Response($code ?? HttpCode::OK()))
-        ->setContentType(ContentType::TEXT)
-        ->setContent($content);
-}

@@ -3,18 +3,18 @@
 
 namespace Hyqo\Http\Test;
 
+use Hyqo\Http\ContentType;
+use Hyqo\Http\Header;
+use Hyqo\Http\Response;
 use PHPUnit\Framework\TestCase;
-
-use function Hyqo\Http\json_response;
-use function Hyqo\Http\redirect;
-use function Hyqo\Http\text_response;
-use function Hyqo\Http\html_response;
 
 class ResponseTest extends TestCase
 {
     public function test_send_redirect()
     {
-        redirect('/foo')->send();
+        (new Response())
+            ->setHeader(Header::LOCATION, '/foo')
+            ->send();
 
         $this->assertEquals(
             [
@@ -27,7 +27,10 @@ class ResponseTest extends TestCase
     public function test_send_text()
     {
         ob_start();
-        text_response('foo')->send();
+        (new Response())
+            ->setContentType(ContentType::TEXT)
+            ->setContent('foo')
+            ->send();
         $content = ob_get_clean();
 
         $this->assertEquals(['Content-type: text/plain;charset=UTF-8'], xdebug_get_headers());
@@ -37,7 +40,10 @@ class ResponseTest extends TestCase
     public function test_send_html()
     {
         ob_start();
-        html_response('foo')->send();
+        (new Response())
+            ->setContentType(ContentType::HTML)
+            ->setContent('foo')
+            ->send();
         $content = ob_get_clean();
 
         $this->assertEquals(['Content-type: text/html;charset=UTF-8'], xdebug_get_headers());
@@ -47,7 +53,12 @@ class ResponseTest extends TestCase
     public function test_send_json()
     {
         ob_start();
-        json_response(['foo'])->send();
+
+        (new Response())
+            ->setContentType(ContentType::JSON)
+            ->setContent(json_encode(['foo']))
+            ->send();
+
         $content = ob_get_clean();
 
         $this->assertEquals(['Content-Type: application/json'], xdebug_get_headers());
@@ -57,14 +68,18 @@ class ResponseTest extends TestCase
     public function test_send_attachment()
     {
         ob_start();
-        json_response([])->sendAsAttachment('foo.json', 'application/json');
+        (new Response())
+            ->setContentType(ContentType::JSON)
+            ->setContent(json_encode(['foo']))
+            ->sendAsAttachment('foo.json', 'application/json');
+
         $content = ob_get_clean();
 
         $this->assertEquals([
             'Content-Type: application/json',
             'Content-Disposition: attachment; filename="foo.json"',
-            'Content-Length: 2',
+            'Content-Length: 7',
         ], xdebug_get_headers());
-        $this->assertEquals('[]', $content);
+        $this->assertEquals('["foo"]', $content);
     }
 }
