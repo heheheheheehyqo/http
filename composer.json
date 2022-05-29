@@ -11,8 +11,12 @@
         }
     ],
     "require": {
-        "php": "^7.2",
-        "ext-json": "*"
+        "php": ">=7.2 <8.1",
+        "ext-json": "*",
+        "hyqo/ip-utils": "^0.4",
+        "hyqo/http-headers": "^0.12",
+        "hyqo/http-codes": "^1.0",
+        "hyqo/container": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.5",
@@ -20,12 +24,16 @@
     },
     "autoload": {
         "psr-4": {
-            "Hyqo\\HTTP\\": "src"
-        }
+            "Hyqo\\Http\\": "src"
+        },
+        "files": [
+            "src/functions.php",
+            "src/Router/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
-            "Hyqo\\HTTP\\Test\\": "tests"
+            "Hyqo\\Http\\Test\\": "tests"
         }
     }
 }

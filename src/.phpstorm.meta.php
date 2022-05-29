@@ -3,11 +3,11 @@
 namespace PHPSTORM_META {
 
     expectedArguments(
-        \Hyqo\HTTP\Response::header(),
+        \Hyqo\Http\Response::header(),
         0,
-        \Hyqo\HTTP\Header::CONTENT_TYPE,
-        \Hyqo\HTTP\Header::LOCATION,
+        \Hyqo\Http\Enum\Header::CONTENT_TYPE,
+        \Hyqo\Http\Enum\Header::LOCATION,
     );
-    expectedArguments(\Hyqo\HTTP\Response::contentType(), 0, \Hyqo\HTTP\ContentType::JSON);
+    expectedArguments(\Hyqo\Http\Response::setContentType(), 0, \Hyqo\Http\ContentType::JSON);
 //    exitPoint(\Hyqo\HTTP\Response::send());
 }

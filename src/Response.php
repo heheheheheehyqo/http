@@ -1,43 +1,74 @@
 <?php
 
-namespace Hyqo\HTTP;
+namespace Hyqo\Http;
 
 class Response
 {
-    /** @var array */
-    private $headers = [];
+    /** @var ResponseHeaders */
+    public $headers;
 
-    public function header(string $name, string $value): Response
+    /** @var string */
+    protected $content;
+
+    public function __construct(?HttpCode $code = null, string $content = null)
     {
-        $this->headers[$name] = $value;
+        $this->headers = (new ResponseHeaders)->setCode($code ?? HttpCode::OK());
+    }
+
+    public static function create(?HttpCode $code = null): self
+    {
+        return new self($code);
+    }
+
+    public function setCode(HttpCode $code): Response
+    {
+        $this->headers->setCode($code);
 
         return $this;
     }
 
-    public function contentType(string $value): Response
+    public function setContent(string $content): Response
     {
-        return $this->header(Header::CONTENT_TYPE, $value);
+        $this->content = $content;
+
+        return $this;
+    }
+
+    public function setHeader(string $name, string $value): Response
+    {
+        $this->headers->set($name, $value);
+
+        return $this;
+    }
+
+    public function setContentType(string $value): Response
+    {
+        $this->headers->contentType->set($value);
+
+        return $this;
     }
 
     private function sendHeaders(): void
     {
-        foreach ($this->headers as $name => $value) {
-            header(sprintf('%s: %s', $name, $value));
+        foreach ($this->headers->each() as $header) {
+            header($header);
         }
     }
 
-    public function send(string $data = ''): void
+    public function sendAsAttachment(string $filename, string $mimeType): void
     {
-        $this->sendHeaders();
-
-        echo $data;
+        $this->headers->contentDisposition->setAttachment($filename);
+        $this->headers->set(Header::CONTENT_LENGTH, strlen($this->content));
+        $this->setContentType($mimeType);
+        $this->send();
     }
 
-    public function sendJSON(array $data = []): void
+    public function send(): void
     {
-        $this->contentType(ContentType::JSON);
-        $this->sendHeaders();
+        foreach ($this->headers->each() as $header) {
+            header($header);
+        }
 
-        echo json_encode($data);
+        echo $this->content;
     }
 }
