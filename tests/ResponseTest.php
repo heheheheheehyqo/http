@@ -5,11 +5,21 @@ namespace Hyqo\Http\Test;
 
 use Hyqo\Http\ContentType;
 use Hyqo\Http\Header;
+use Hyqo\Http\HttpCode;
 use Hyqo\Http\Response;
 use PHPUnit\Framework\TestCase;
 
 class ResponseTest extends TestCase
 {
+    public function test_set_code()
+    {
+        $response = (new Response());
+
+        $response->setCode(HttpCode::FORBIDDEN());
+
+        $this->assertEquals(HttpCode::FORBIDDEN, $response->headers->getCode()->value);
+    }
+
     public function test_send_redirect()
     {
         (new Response())
