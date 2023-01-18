@@ -2,8 +2,6 @@
 
 namespace Hyqo\Http\Test\Pool;
 
-use Hyqo\Http\Exception\InvalidFilterCallableException;
-use Hyqo\Http\Pool\InputPool;
 use Hyqo\Http\Pool\Pool;
 use PHPUnit\Framework\TestCase;
 

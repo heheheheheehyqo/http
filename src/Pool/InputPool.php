@@ -4,11 +4,9 @@ namespace Hyqo\Http\Pool;
 
 use Hyqo\Http\Exception\InvalidFilterCallableException;
 
-use function Hyqo\UUID\uuid;
-
 class InputPool extends Pool
 {
-    public function get(string $key, ?string $default = ''): string|array|null
+    public function get(string $key, mixed $default = ''): string|array|null
     {
         $value = parent::get($key, $default);
 

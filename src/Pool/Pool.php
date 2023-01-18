@@ -28,7 +28,7 @@ abstract class Pool implements \IteratorAggregate, \Countable
         $this->storage = array_replace($this->storage, $parameters);
     }
 
-    public function get(string $key, ?string $default = null): mixed
+    public function get(string $key, mixed $default = null): mixed
     {
         return $this->has($key) ? $this->storage[$key] : $default;
     }

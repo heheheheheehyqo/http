@@ -2,10 +2,7 @@
 
 namespace Hyqo\Http\Test;
 
-use Hyqo\Http\Exception\InvalidHostException;
-use Hyqo\Http\Method;
 use Hyqo\Http\Request;
-use Hyqo\Http\TrustedValue;
 use PHPUnit\Framework\TestCase;
 
 class RequestTest extends TestCase
