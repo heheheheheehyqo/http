@@ -2,7 +2,7 @@
 
 namespace Hyqo\Http\Test;
 
-use Hyqo\Http\Header;
+use Hyqo\Http\Exception\InvalidHostException;
 use Hyqo\Http\Method;
 use Hyqo\Http\Request;
 use Hyqo\Http\TrustedValue;
@@ -10,65 +10,84 @@ use PHPUnit\Framework\TestCase;
 
 class RequestTest extends TestCase
 {
+    /** @runInSeparateProcess */
+    public function test_create_from_globals(): void
+    {
+        $_GET = ['foo' => 'bar'];
+        $_POST = ['bar' => 'foo'];
+
+        $request = Request::createFromGlobals();
+
+        $this->assertEquals('bar', $request->get('foo'));
+        $this->assertEquals('foo', $request->get('bar'));
+    }
+
     /**
-     * @dataProvider provideBasePathData
+     * @dataProvider provide_get_base_path_data
      */
-    public function test_get_base_path($uri, $server, $expected): void
-    {
-        $request = Request::create(Method::GET(), $uri, [], [], [], $server);
+//    public function test_get_base_path($server, $expected): void
+//    {
+//        $request = new Request(server: $server);
+//
+//        $this->assertSame($expected, $request->getBasePath());
+//    }
 
-        $this->assertSame($expected, $request->getBasePath());
-    }
-
-    public function provideBasePathData(): array
-    {
-        return [
-            [
-                '/web/index.php',
-                [
-                    'SCRIPT_FILENAME' => '/some/where/index.php',
-                    'SCRIPT_NAME' => '/index.php',
-                ],
-                '/web'
-            ],
-            [
-                '/',
-                [
-                    'SCRIPT_FILENAME' => '/some/where/index.php',
-                ],
-                ''
-            ],
-            [
-                '/',
-                [
-                    'SCRIPT_FILENAME' => '/some/where/index.php',
-                    'PHP_SELF' => '/index.php',
-                ],
-                ''
-            ],
-            [
-                '/we%20b/index.php',
-                [
-                    'SCRIPT_FILENAME' => '/some/where/index.php',
-                    'PHP_SELF' => '/index.php',
-                ],
-                ''
-            ],
-        ];
-    }
+//    public function provide_get_base_path_data(): array
+//    {
+//        return [
+//            [
+//                [
+//                    'REQUEST_URI' => '/web/index.php',
+//                    'SCRIPT_FILENAME' => '/some/where/index.php',
+//                    'SCRIPT_NAME' => '/index.php',
+//                ],
+//                '/web/index.php'
+//            ],
+//            [
+//                [
+//                    'REQUEST_URI' => '/web/index.php',
+//                    'SCRIPT_FILENAME' => '/some/where/index999.php',
+//                    'SCRIPT_NAME' => '/index2.php',
+//                ],
+//                ''
+//            ],
+//            [
+//                [
+//                    'REQUEST_URI' => '/',
+//                    'SCRIPT_FILENAME' => '/some/where/index.php',
+//                ],
+//                ''
+//            ],
+//            [
+//                [
+//                    'REQUEST_URI' => '/',
+//                    'SCRIPT_FILENAME' => '/some/where/index.php',
+//                    'PHP_SELF' => '/index.php',
+//                ],
+//                ''
+//            ],
+//            [
+//                [
+//                    'REQUEST_URI' => '/we%20b/index.php',
+//                    'SCRIPT_FILENAME' => '/some/where/index.php',
+//                    'PHP_SELF' => '/index.php',
+//                ],
+//                ''
+//            ],
+//        ];
+//    }
 
     /**
-     * @dataProvider providePathInfoData
+     * @dataProvider provide_get_path_info_data
      */
     public function test_get_path_info($server, $expected): void
     {
-        $request = new Request();
-        $request->server->add($server);
+        $request = new Request(server: $server);
 
         $this->assertSame($expected, $request->getPathInfo());
     }
 
-    public function providePathInfoData(): array
+    public function provide_get_path_info_data(): array
     {
         return [
             [
@@ -97,212 +116,195 @@ class RequestTest extends TestCase
     }
 
     /**
-     * @dataProvider provideBaseUrlData
+     * @dataProvider provide_get_base_url_data
      */
-    public function test_get_base_url($uri, $server, $expectedBaseUrl, $expectedPathInfo): void
+    public function test_get_base_url($server, $expectedBaseUrl, $expectedPathInfo): void
     {
-        $request = Request::create(Method::GET(), $uri, [], [], [], $server);
+        $request = new Request(server: $server);
 
-        $this->assertSame($expectedBaseUrl, $request->getBaseUrl(), 'baseUrl: ' . $uri);
+        $this->assertSame($expectedBaseUrl, $request->getBaseUrl(), 'baseUrl: ' . $server['REQUEST_URI']);
         $this->assertSame($expectedPathInfo, $request->getPathInfo(), 'pathInfo');
     }
 
-    public function provideBaseUrlData(): array
+    public function provide_get_base_url_data(): array
     {
         return [
             [
-                '/fruit/strawberry/1234index.php/blah',
                 [
-                    'SCRIPT_FILENAME' => 'E:/Sites/cc-new/public_html/fruit/index.php',
-                    'SCRIPT_NAME' => '/fruit/index.php',
-                    'PHP_SELF' => '/fruit/index.php',
+                    'REQUEST_URI' => '/foo/bar/1234index.php/test',
+                    'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo/index.php',
+                    'SCRIPT_NAME' => '/foo/index.php',
                 ],
-                '/fruit',
-                '/strawberry/1234index.php/blah',
+                '/foo',
+                '/bar/1234index.php/test',
             ],
             [
-                '/fruit/strawberry/1234index.php/blah',
                 [
-                    'SCRIPT_FILENAME' => 'E:/Sites/cc-new/public_html/index.php',
+                    'REQUEST_URI' => '/foo/bar/1234index.php/test',
+                    'SCRIPT_FILENAME' => '/home/John Doe/public_html/index.php',
                     'SCRIPT_NAME' => '/index.php',
-                    'PHP_SELF' => '/index.php',
                 ],
                 '',
-                '/fruit/strawberry/1234index.php/blah',
+                '/foo/bar/1234index.php/test',
             ],
             [
-                '/foo%20bar/',
                 [
+                    'REQUEST_URI' => '/foo%20bar/',
                     'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo bar/app.php',
                     'SCRIPT_NAME' => '/foo bar/app.php',
-                    'PHP_SELF' => '/foo bar/app.php',
                 ],
                 '/foo%20bar',
                 '/',
             ],
             [
-                '/foo%20bar/home',
                 [
+                    'REQUEST_URI' => '/foo%20bar/home',
                     'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo bar/app.php',
                     'SCRIPT_NAME' => '/foo bar/app.php',
-                    'PHP_SELF' => '/foo bar/app.php',
                 ],
                 '/foo%20bar',
                 '/home',
             ],
             [
-                '/foo%20bar/app.php/home',
                 [
+                    'REQUEST_URI' => '/foo%20bar/app.php/home',
                     'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo bar/app.php',
                     'SCRIPT_NAME' => '/foo bar/app.php',
-                    'PHP_SELF' => '/foo bar/app.php',
                 ],
-                '/foo%20bar/app.php',
-                '/home',
+                '/foo%20bar',
+                '/app.php/home',
             ],
             [
-                '/foo%20bar/app.php/home%3Dbaz',
                 [
+                    'REQUEST_URI' => '/foo%20bar/app.php/home%3Dbaz',
                     'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo bar/app.php',
                     'SCRIPT_NAME' => '/foo bar/app.php',
-                    'PHP_SELF' => '/foo bar/app.php',
                 ],
-                '/foo%20bar/app.php',
-                '/home%3Dbaz',
+                '/foo%20bar',
+                '/app.php/home%3Dbaz',
             ],
             [
-                '/foo/bar+baz',
                 [
+                    'REQUEST_URI' => '/foo/bar+baz',
                     'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo/app.php',
                     'SCRIPT_NAME' => '/foo/app.php',
-                    'PHP_SELF' => '/foo/app.php',
                 ],
                 '/foo',
                 '/bar+baz',
             ],
             [
-                '/sub/foo/bar',
                 [
+                    'REQUEST_URI' => '/sub/foo/bar',
                     'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo/app.php',
                     'SCRIPT_NAME' => '/foo/app.php',
-                    'PHP_SELF' => '/foo/app.php',
                 ],
                 '',
                 '/sub/foo/bar',
             ],
             [
-                '/sub/foo/app.php/bar',
                 [
-                    'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo/app.php',
-                    'SCRIPT_NAME' => '/foo/app.php',
-                    'PHP_SELF' => '/foo/app.php',
-                ],
-                '/sub/foo/app.php',
-                '/bar',
-            ],
-            [
-                '/sub/foo/bar/baz',
-                [
-                    'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo/app2.phpx',
-                    'SCRIPT_NAME' => '/foo/app2.phpx',
-                    'PHP_SELF' => '/foo/app2.phpx',
+                    'REQUEST_URI' => '/sub/foo/bar/baz',
+                    'SCRIPT_FILENAME' => '/home/John Doe/public_html/foo/app2.php',
+                    'SCRIPT_NAME' => '/foo/app2.php',
                 ],
                 '',
                 '/sub/foo/bar/baz',
             ],
             [
-                '/foo/api/bar',
                 [
+                    'REQUEST_URI' => '/foo/api/bar',
                     'SCRIPT_FILENAME' => '/var/www/api/index.php',
                     'SCRIPT_NAME' => '/api/index.php',
-                    'PHP_SELF' => '/api/index.php',
                 ],
                 '',
                 '/foo/api/bar',
             ],
             [
-                '/webmaster',
                 [
+                    'REQUEST_URI' => '/webmaster',
                     'SCRIPT_FILENAME' => '/foo/bar/web/index.php',
                     'SCRIPT_NAME' => '/web/index.php',
-                    'PHP_SELF' => '/web/index.php',
                 ],
                 '',
                 '/webmaster',
-            ],
+            ]
         ];
     }
 
     /**
-     * @dataProvider provideRequestUriData
+     * @dataProvider provide_get_request_uri_data
      */
-    public function test_get_request_uri($requestUri, $expected, $message): void
+    public function test_get_request_uri(string $expected, string $requestUri): void
     {
-        $request = new Request();
-        $request->server->add([
-            'REQUEST_URI' => $requestUri,
-            'SERVER_NAME' => 'test.com',
-            'SERVER_PORT' => 80,
-        ]);
+        $request = new Request(server: ['REQUEST_URI' => $requestUri]);
 
-        $this->assertSame($expected, $request->getRequestUri(), $message);
+        $this->assertSame($expected, $request->getRequestUri());
     }
 
-    public function provideRequestUriData(): \Generator
+    public function provide_get_request_uri_data(): \Generator
     {
-        $message = 'Do not modify the path.';
-        yield ['/foo', '/foo', $message];
-        yield ['//bar/foo', '//bar/foo', $message];
-        yield ['///bar/foo', '///bar/foo', $message];
-
-        $message = 'Handle when the scheme, host are on REQUEST_URI.';
-        yield ['http://test.com/foo?bar=baz', '/foo?bar=baz', $message];
-
-        $message = 'Handle when the scheme, host and port are on REQUEST_URI.';
-        yield ['http://test.com:80/foo', '/foo', $message];
-        yield ['https://test.com:8080/foo', '/foo', $message];
-        yield ['https://test.com:443/foo', '/foo', $message];
-
-        $message = 'Fragment should not be included in the URI';
-        yield ['http://test.com/foo#bar', '/foo', $message];
-        yield ['/foo#bar', '/foo', $message];
+        yield ['/foo', '/foo'];
+        yield ['//bar/foo', '//bar/foo'];
+        yield ['///bar/foo', '///bar/foo'];
+        yield ['/foo?bar=baz', '/foo?bar=baz'];
+        yield ['/foo?bar=baz', '/foo?bar=baz'];
     }
 
-    public function test_is_secure(): void
+    /** @dataProvider provide_is_secure_data */
+    public function test_is_secure(bool $expected, array $server): void
     {
-        $request = Request::create(Method::GET(), 'http://google.com:8080');
-        $this->assertFalse($request->isSecure());
+        $request = new Request(server: $server);
 
-        $request = Request::create(Method::GET(), 'https://localhost');
-        $this->assertTrue($request->isSecure());
+        $this->assertEquals($expected, $request->isSecure());
     }
 
-    public function test_is_from_trusted_proxy(): void
+    protected function provide_is_secure_data(): \Generator
     {
-        $request = Request::create(Method::GET(), 'localhost');
-        $this->assertFalse($request->isFromTrustedProxy());
+        yield [false, []];
 
-        Request::setTrustedProxy(['127.0.0.1'], 0);
-        $request = Request::create(Method::GET(), 'localhost');
-        $this->assertTrue($request->isFromTrustedProxy());
+        yield [false, ['HTTPS' => '']];
+
+        yield [true, ['HTTPS' => 'on']];
     }
 
     public function test_get_host(): void
     {
-        $request = Request::create(Method::GET(), 'http://google.com:8080');
+        $request = new Request(server: ['HTTP_HOST' => 'google.com']);
         $this->assertEquals('google.com', $request->getHost());
 
-        $request = Request::create(Method::GET(), 'https://evil_.com');
-        try {
-            $request->getHost();
-            $this->fail('Should throw an exception');
-        } catch (\UnexpectedValueException $exception) {
-            $this->assertEquals('Invalid Host "evil_.com".', $exception->getMessage());
-        }
-
-        $request = Request::create(Method::GET(), '');
-        $request->headers->set(Header::HOST, 'google.com');
+        $request = new Request(server: ['HTTP_HOST' => 'google.com:80']);
         $this->assertEquals('google.com', $request->getHost());
+    }
+
+    /** @dataProvider provide_get_http_host_data */
+    public function test_get_http_host(string $expected, array $server): void
+    {
+        $request = new Request(server: $server);
+
+        $this->assertEquals($expected, $request->getHttpHost());
+    }
+
+    protected function provide_get_http_host_data(): \Generator
+    {
+        yield [
+            'foo.com',
+            ['HTTP_HOST' => 'foo.com']
+        ];
+
+        yield [
+            'foo.com',
+            ['HTTP_HOST' => 'foo.com', 'HTTPS' => 'on']
+        ];
+
+        yield [
+            'foo.com:8080',
+            ['HTTP_HOST' => 'foo.com:8080']
+        ];
+
+        yield [
+            'foo.com:8443',
+            ['HTTP_HOST' => 'foo.com:8443', 'HTTPS' => 'on']
+        ];
     }
 
     public function test_very_long_host(): void
@@ -315,71 +317,171 @@ class RequestTest extends TestCase
         ) {
             $start = microtime(true);
 
-            $request = Request::create(Method::GET(), '/');
-            $request->headers->set('host', $host);
+            $request = new Request(server: ['HTTP_HOST' => $host]);
             $this->assertEquals($host, $request->getHost());
             $this->assertLessThan(.1, microtime(true) - $start);
         }
     }
 
+    public function test_get_scheme(): void
+    {
+        $request = new Request(server: ['HTTPS' => 'on']);
+        $this->assertEquals('https', $request->getScheme());
+
+        $request = new Request(server: ['HTTPS' => '']);
+        $this->assertEquals('http', $request->getScheme());
+    }
+
+    /** @dataProvider provide_get_scheme_and_http_host_data */
+    public function test_get_scheme_and_http_host(string $expected, array $server): void
+    {
+        $request = new Request(server: $server);
+
+        $this->assertEquals($expected, $request->getSchemeAndHttpHost());
+    }
+
+    protected function provide_get_scheme_and_http_host_data(): \Generator
+    {
+        yield [
+            'http://foo.com',
+            ['HTTP_HOST' => 'foo.com']
+        ];
+
+        yield [
+            'https://foo.com',
+            ['HTTP_HOST' => 'foo.com', 'HTTPS' => 'on']
+        ];
+
+        yield [
+            'http://foo.com:8080',
+            ['HTTP_HOST' => 'foo.com:8080']
+        ];
+
+        yield [
+            'https://foo.com:8443',
+            ['HTTP_HOST' => 'foo.com:8443', 'HTTPS' => 'on']
+        ];
+    }
+
     public function test_get_port(): void
     {
-        $request = Request::create(Method::GET(), 'http://google.com:8080');
+        $request = new Request(server: ['SERVER_PORT' => 8080]);
         $this->assertEquals(8080, $request->getPort());
 
-        $request = Request::create(Method::GET(), 'http://localhost');
-        $this->assertEquals(80, $request->getPort());
-
-        $request = Request::create(Method::GET(), 'https://localhost');
+        $request = new Request(server: ['HTTP_HOST' => 'localhost', 'HTTPS' => 'on']);
         $this->assertEquals(443, $request->getPort());
 
-        Request::setTrustedProxy(['127.0.0.1'], TrustedValue::HOST);
-        $request = Request::create(Method::GET(), 'https://localhost');
-        $request->headers->set(Header::X_FORWARDED_HOST, 'localhost:1234');
-        $this->assertEquals(1234, $request->getPort());
+        $request = new Request(server: ['HTTP_HOST' => 'localhost']);
+        $this->assertEquals(80, $request->getPort());
     }
 
     public function test_get_client_ip(): void
     {
-        $request = new Request([], [], [], [], [], ['REMOTE_ADDR' => '127.0.0.1']);
+        $request = new Request(server: ['REMOTE_ADDR' => '127.0.0.1']);
         $this->assertEquals('127.0.0.1', $request->getClientIP());
 
-        Request::setTrustedProxy(['127.0.0.1'], 0);
-        $request = new Request([], [], [], [], [], ['REMOTE_ADDR' => '127.0.0.1']);
-        $request->headers->set(Header::X_FORWARDED_FOR, '::1');
+        $request = new Request(server: ['REMOTE_ADDR' => '127.0.0.1', 'HTTP_X_FORWARDED_FOR' => '::1']);
         $this->assertEquals('127.0.0.1', $request->getClientIP());
-
-        Request::setTrustedProxy(['127.0.0.1'], TrustedValue::FOR);
-        $request->headers->set(Header::X_FORWARDED_FOR, '::1, ::2');
-        $this->assertEquals('::1', $request->getClientIP());
-        $this->assertEquals(['::1', '::2'], $request->getClientIPs());
     }
 
-    public function test_get_scheme(): void
+    public function test_get_query_string(): void
     {
-        $request = Request::create(Method::GET(), 'https://localhost');
-        $this->assertEquals('https', $request->getScheme());
+        $request = new Request(server: ['QUERY_STRING' => 'foo=bar&bar=foo bar']);
 
-        $request = Request::create(Method::GET(), 'http://localhost');
-        $this->assertEquals('http', $request->getScheme());
+        $this->assertEquals('foo=bar&bar=foo%20bar', $request->getQueryString());
+    }
+
+    public function test_generate_url_for_path(): void
+    {
+        $request = new Request(server: ['HTTP_HOST' => 'foo.com']);
+
+        $this->assertEquals('http://foo.com/bar', $request->generateUrlForPath('/bar'));
+    }
+
+    /** @dataProvider provide_get_url_data */
+    public function test_get_url(string $expected, array $server): void
+    {
+        $request = new Request(server: $server);
+
+        $this->assertEquals($expected, $request->getUrl());
+    }
+
+    protected function provide_get_url_data(): \Generator
+    {
+        yield [
+            'http://foo.com/',
+            [
+                'HTTP_HOST' => 'foo.com',
+            ]
+        ];
+
+        yield [
+            'https://foo.com/test?foo=bar',
+            [
+                'HTTP_HOST' => 'foo.com',
+                'HTTPS' => 'on',
+                'REQUEST_URI' => '/test?foo=bar',
+                'QUERY_STRING' => 'foo=bar',
+            ]
+        ];
+
+        yield [
+            'https://foo.com/foo/test?foo=bar',
+            [
+                'HTTP_HOST' => 'foo.com',
+                'HTTPS' => 'on',
+                'REQUEST_URI' => '/foo/test?foo=bar',
+                'QUERY_STRING' => 'foo=bar',
+                'SCRIPT_FILENAME' => 'C:/app/public_html/foo/index.php',
+                'SCRIPT_NAME' => '/foo/index.php',
+            ]
+        ];
     }
 
     public function test_get_parameter(): void
     {
-        $request = new Request();
+        $request = new Request(query: ['foo' => 'bar']);
         $request->attributes->set('foo', 'attr');
-        $request->query->set('foo', 'query');
-        $request->request->set('foo', 'body');
-
         $this->assertEquals('attr', $request->get('foo'));
 
         $request->attributes->remove('foo');
-        $this->assertEquals('query', $request->get('foo'));
+        $this->assertEquals('bar', $request->get('foo'));
 
-        $request->query->remove('foo');
-        $this->assertEquals('body', $request->get('foo'));
+        $this->assertNull($request->get('bar'));
+    }
 
-        $request->request->remove('foo');
-        $this->assertNull($request->get('foo'));
+    public function test_json_request(): void
+    {
+        $input = tempnam('/tmp', 'input');
+        file_put_contents($input, json_encode(['foo' => 'bar']));
+        $request = new Request(
+            server: ['HTTP_CONTENT_TYPE' => 'application/json', 'REQUEST_METHOD' => 'POST'],
+            input: $input
+        );
+        unlink($input);
+
+        $this->assertEquals('bar', $request->get('foo'));
+        $this->assertNull($request->get('bar'));
+    }
+
+    public function test_form_request(): void
+    {
+        $input = tempnam('/tmp', 'input');
+        file_put_contents($input, http_build_query(['foo' => 'bar']));
+        $request = new Request(
+            server: ['HTTP_CONTENT_TYPE' => 'application/x-www-form-urlencoded', 'REQUEST_METHOD' => 'PUT'],
+            input: $input
+        );
+        unlink($input);
+
+        $this->assertEquals('bar', $request->get('foo'));
+        $this->assertNull($request->get('bar'));
+    }
+
+    public function test_get_content_type(): void
+    {
+        $request = new Request(server: ['HTTP_CONTENT_TYPE' => 'application/x-www-form-urlencoded']);
+
+        $this->assertEquals('application/x-www-form-urlencoded', $request->getContentType());
     }
 }

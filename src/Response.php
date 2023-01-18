@@ -4,15 +4,11 @@ namespace Hyqo\Http;
 
 class Response
 {
-    /** @var ResponseHeaders */
-    public $headers;
+    public ResponseHeaders $headers;
 
-    /** @var string */
-    protected $content;
-
-    public function __construct(?HttpCode $code = null, string $content = null)
+    public function __construct(?HttpCode $code = null, protected ?string $content = null)
     {
-        $this->headers = (new ResponseHeaders)->setCode($code ?? HttpCode::OK());
+        $this->headers = (new ResponseHeaders)->setCode($code ?? HttpCode::OK);
     }
 
     public static function create(?HttpCode $code = null): self
@@ -41,9 +37,13 @@ class Response
         return $this;
     }
 
-    public function setContentType(string $value): Response
+    public function setContentType(string $mediaType, ?string $charset = null): Response
     {
-        $this->headers->contentType->set($value);
+        $this->headers->contentType->setMediaType($mediaType);
+
+        if (null !== $charset) {
+            $this->headers->contentType->setCharset($charset);
+        }
 
         return $this;
     }
@@ -51,14 +51,14 @@ class Response
     public function sendAsAttachment(string $filename, string $mimeType): void
     {
         $this->headers->contentDisposition->setAttachment($filename);
-        $this->headers->set(Header::CONTENT_LENGTH, strlen($this->content));
+        $this->headers->set('Content-Length', strlen($this->content));
         $this->setContentType($mimeType);
         $this->send();
     }
 
     public function send(): void
     {
-        foreach ($this->headers->each() as $header) {
+        foreach ($this->headers->all() as $header) {
             header($header);
         }
 

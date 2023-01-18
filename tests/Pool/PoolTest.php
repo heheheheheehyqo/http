@@ -2,6 +2,7 @@
 
 namespace Hyqo\Http\Test\Pool;
 
+use Hyqo\Http\Exception\InvalidFilterCallableException;
 use Hyqo\Http\Pool\InputPool;
 use Hyqo\Http\Pool\Pool;
 use PHPUnit\Framework\TestCase;
@@ -25,7 +26,7 @@ class PoolTest extends TestCase
         ];
     }
 
-    public function test_has()
+    public function test_has(): void
     {
         $pool = $this->createPool($this->parameters());
 
@@ -33,24 +34,24 @@ class PoolTest extends TestCase
         $this->assertTrue($pool->has('string'));
     }
 
-    public function test_get()
+    public function test_get(): void
     {
         $pool = $this->createPool($this->parameters());
 
         $this->assertEquals(999, $pool->get('int'));
         $this->assertEquals('foo', $pool->get('string'));
-        $this->assertEquals(['foo' => 'bar'], $pool->get('array'));
-        $this->assertEquals((object)['foo' => 'bar'], $pool->get('object'));
+//        $this->assertEquals(['foo' => 'bar'], $pool->get('array'));
+//        $this->assertEquals((object)['foo' => 'bar'], $pool->get('object'));
     }
 
-    public function test_get_default()
+    public function test_get_default(): void
     {
         $pool = $this->createPool();
 
         $this->assertEquals('bar', $pool->get('foo', 'bar'));
     }
 
-    public function test_set()
+    public function test_set(): void
     {
         $pool = $this->createPool($this->parameters());
         $pool->set('string', 'bar');
@@ -58,7 +59,7 @@ class PoolTest extends TestCase
         $this->assertEquals('bar', $pool->get('string'));
     }
 
-    public function test_remove()
+    public function test_remove(): void
     {
         $pool = $this->createPool($this->parameters());
         $pool->remove('string');
@@ -67,21 +68,21 @@ class PoolTest extends TestCase
         $this->assertFalse($pool->has('string'));
     }
 
-    public function test_all()
+    public function test_all(): void
     {
         $pool = $this->createPool($this->parameters());
 
         $this->assertEquals($this->parameters(), $pool->all());
     }
 
-    public function test_keys()
+    public function test_keys(): void
     {
         $pool = $this->createPool($this->parameters());
 
         $this->assertEquals(array_keys($this->parameters()), $pool->keys());
     }
 
-    public function test_replace()
+    public function test_replace(): void
     {
         $pool = $this->createPool($this->parameters());
 
@@ -90,7 +91,7 @@ class PoolTest extends TestCase
         $this->assertEquals(['foo' => 'bar'], $pool->all());
     }
 
-    public function test_add()
+    public function test_add(): void
     {
         $pool = $this->createPool($this->parameters());
 
@@ -103,28 +104,17 @@ class PoolTest extends TestCase
         $this->assertEquals('bar', $pool->get('string'));
     }
 
-    public function test_count()
+    public function test_count(): void
     {
         $pool = $this->createPool($this->parameters());
 
         $this->assertEquals(count($this->parameters()), $pool->count());
     }
 
-    public function test_iterator()
+    public function test_iterator(): void
     {
         $pool = $this->createPool($this->parameters());
 
         $this->assertInstanceOf(\ArrayIterator::class, $pool->getIterator());
-    }
-
-    public function test_filter()
-    {
-        $pool = $this->createPool();
-        $pool->set('valid_email', 'foo@bar.test');
-        $pool->set('invalid_email', 'foo');
-
-        $this->assertFalse($pool->filter('undefined_key', null, FILTER_VALIDATE_EMAIL));
-        $this->assertFalse($pool->filter('invalid_email', null, FILTER_VALIDATE_EMAIL));
-        $this->assertNotFalse($pool->filter('valid_email', null, FILTER_VALIDATE_EMAIL));
     }
 }

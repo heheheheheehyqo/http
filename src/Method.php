@@ -2,43 +2,40 @@
 
 namespace Hyqo\Http;
 
-use Hyqo\Enum\Enum;
-
-/**
- * @method static HEAD
- * @method static OPTIONS
- * @method static TRACE
- * @method static GET
- * @method static POST
- * @method static PUT
- * @method static DELETE
- * @method static PATCH
- */
-class Method extends Enum
+enum Method: string
 {
-    public const HEAD = 'HEAD';
-    public const OPTIONS = 'OPTIONS';
-    public const TRACE = 'TRACE';
+    case HEAD = 'HEAD';
+    case OPTIONS = 'OPTIONS';
+    case TRACE = 'TRACE';
 
-    public const GET = 'GET';
+    case GET = 'GET';
 
-    public const POST = 'POST';
-    public const PUT = 'PUT';
-    public const DELETE = 'DELETE';
-    public const PATCH = 'PATCH';
+    case POST = 'POST';
+    case PUT = 'PUT';
+    case DELETE = 'DELETE';
+    case PATCH = 'PATCH';
 
     public function isSafe(): bool
     {
-        return in_array($this->value, [self::HEAD, self::GET, self::OPTIONS, self::TRACE], true);
+        return match ($this) {
+            self::HEAD, self::GET, self::OPTIONS, self::TRACE => true,
+            default => false
+        };
     }
 
     public function isIdempotent(): bool
     {
-        return in_array($this->value, [self::HEAD, self::GET, self::PUT, self::DELETE, self::OPTIONS], true);
+        return match ($this) {
+            self::HEAD, self::GET, self::PUT, self::DELETE, self::OPTIONS => true,
+            default => false
+        };
     }
 
     public function isCacheable(): bool
     {
-        return in_array($this->value, [self::HEAD, self::GET], true);
+        return match ($this) {
+            self::HEAD, self::GET => true,
+            default => false
+        };
     }
 }

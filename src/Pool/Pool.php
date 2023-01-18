@@ -4,108 +4,60 @@ namespace Hyqo\Http\Pool;
 
 abstract class Pool implements \IteratorAggregate, \Countable
 {
-    /** @var array */
-    protected $parameters;
-
-    public function __construct(array $parameters = [])
+    public function __construct(protected array $storage = [])
     {
-        $this->parameters = $parameters;
     }
 
     public function all(): array
     {
-        return $this->parameters;
+        return $this->storage;
     }
 
     public function keys(): array
     {
-        return array_keys($this->parameters);
+        return array_keys($this->storage);
     }
 
     public function replace(array $parameters = []): void
     {
-        $this->parameters = $parameters;
+        $this->storage = $parameters;
     }
 
     public function add(array $parameters = []): void
     {
-        $this->parameters = array_replace($this->parameters, $parameters);
+        $this->storage = array_replace($this->storage, $parameters);
     }
 
-    public function get(string $key, $default = null)
+    public function get(string $key, ?string $default = null): mixed
     {
-        return $this->has($key) ? $this->parameters[$key] : $default;
+        return $this->has($key) ? $this->storage[$key] : $default;
     }
 
     public function has(string $key): bool
     {
-        return \array_key_exists($key, $this->parameters);
+        return \array_key_exists($key, $this->storage);
     }
 
-    public function set(string $key, $value): void
+    public function set(string $key, mixed $value): void
     {
-        $this->parameters[$key] = $value;
+        $this->storage[$key] = $value;
     }
 
     public function remove(string $key): void
     {
-        unset($this->parameters[$key]);
+        unset($this->storage[$key]);
     }
 
     /**
-     * @param array|int|string|\Closure $options
-     */
-    public function filter(string $key, $default = null, int $filter = \FILTER_DEFAULT, $options = [])
-    {
-        $value = $this->get($key, $default);
-
-        if (!\is_array($options) && $options) {
-            $options = ['flags' => $options];
-        }
-
-        if (\is_array($value) && !isset($options['flags'])) {
-            $options['flags'] = \FILTER_REQUIRE_ARRAY;
-        }
-
-        if (\FILTER_CALLBACK & $filter) {
-            $callable = ($options['options'] ?? null);
-
-            if (is_string($callable) && !function_exists($callable)) {
-                throw new \InvalidArgumentException(
-                    sprintf(
-                        'The function named "%s" passed to "%s()" does not exists',
-                        $callable,
-                        __METHOD__
-                    )
-                );
-            }
-
-            if (!is_string($callable) && !($callable instanceof \Closure)) {
-                throw new \InvalidArgumentException(
-                    sprintf(
-                        'A Closure must be passed to "%s()" when FILTER_CALLBACK is used, "%s" given.',
-                        __METHOD__,
-                        gettype($callable)
-                    )
-                );
-            }
-        }
-
-        return filter_var($value, $filter, $options);
-    }
-
-    /**
-     * Returns an iterator for parameters.
-     *
      * @return \ArrayIterator<string, mixed>
      */
     public function getIterator(): \ArrayIterator
     {
-        return new \ArrayIterator($this->parameters);
+        return new \ArrayIterator($this->storage);
     }
 
     public function count(): int
     {
-        return \count($this->parameters);
+        return \count($this->storage);
     }
 }
